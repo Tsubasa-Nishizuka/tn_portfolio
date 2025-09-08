@@ -179,3 +179,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 >>>>>>> aa053a8 (Initial commit from Create Next App)
+
+# Database
+/data/
+*.db
+*.db-*
+

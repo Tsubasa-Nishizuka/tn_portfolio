@@ -1,41 +1,58 @@
-<<<<<<< HEAD
-# tn_portfolio
-Tsubasa’s portfolio
-=======
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 TN Portfolio - 認証システム付きポートフォリオ
 
-## Getting Started
+Next.js 15 + TypeScript で構築した、本格的な認証機能付きポートフォリオサイトです。
 
-First, run the development server:
+## ✨ 主要機能
+
+- 🔐 **多段階認証**: 3種類の登録フォーム（user/admin/master）
+- 🎭 **ロールベース認証**: 役割に応じたダッシュボード
+- 🛡️ **セキュリティ**: JWT + サーバーサイド検証
+- 🗄️ **スケーラブルDB**: SQLite ⇄ PlanetScale 切り替え対応
+- 🎨 **モダンUI**: Tailwind CSS + レスポンシブデザイン
+
+## 🛠️ 技術スタック
+
+- **フロントエンド**: Next.js 15, TypeScript, Tailwind CSS
+- **認証**: JWT, bcryptjs, HttpOnly Cookies
+- **データベース**: SQLite (開発) / PlanetScale (本番)
+- **アーキテクチャ**: アダプターパターン, サーバーサイドAPI
+
+## 🚀 セットアップ
 
 ```bash
-npm run dev
-# or
+# 依存関係インストール
+yarn install
+
+# 開発サーバー起動
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# 本番ビルド
+yarn build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📖 ドキュメント
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+詳細な移行手順やセットアップは **[DATABASE_COMPLETE_GUIDE.md](./DATABASE_COMPLETE_GUIDE.md)** をご覧ください。
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🎯 ポートフォリオハイライト
 
-## Learn More
+- **YouTubeレベルの技術**: Vitess (PlanetScale) 採用
+- **エンタープライズ設計**: アダプターパターンでDB切り替え
+- **セキュリティファースト**: サーバーサイド認証
+- **型安全性**: 完全TypeScript対応
 
-To learn more about Next.js, take a look at the following resources:
+## 📂 プロジェクト構成
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/                 # App Router
+├── lib/
+│   ├── adapters/       # DBアダプター
+│   ├── auth.ts         # JWT認証
+│   └── database.ts     # ユーザーサービス
+└── hooks/              # カスタムフック
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
->>>>>>> aa053a8 (Initial commit from Create Next App)
+**🌟 面接で語れる技術力を実装済み！**
