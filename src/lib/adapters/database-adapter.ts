@@ -2,10 +2,11 @@
 
 export interface DatabaseAdapter {
   findUserByEmail(email: string): Promise<User | null>;
-  createUser(userData: CreateUserData): Promise<User>;
-  verifyPassword(password: string, hashedPassword: string): Promise<boolean>;
-  getAllUsers(): Promise<User[]>;
-  getUserStats(): Promise<UserStats>;
+  findUserById(id: number): Promise<User | null>;
+  createUser(userData: CreateUserData): Promise<User | null>;
+  updateUser(id: number, updates: Partial<Omit<User, 'id'>>): Promise<User | null>;
+  deleteUser(id: number): Promise<boolean>;
+  close(): Promise<void>;
 }
 
 export interface User {
@@ -14,8 +15,8 @@ export interface User {
   email: string;
   password: string;
   role: 'user' | 'admin' | 'master';
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface CreateUserData {
@@ -25,11 +26,8 @@ export interface CreateUserData {
   role: 'user' | 'admin' | 'master';
 }
 
+// Optionally used by some adapters. Keep exported for future use.
 export interface UserStats {
   total: number;
-  byRole: {
-    user: number;
-    admin: number;
-    master: number;
-  };
+  byRole: { user: number; admin: number; master: number };
 }

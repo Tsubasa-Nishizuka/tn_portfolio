@@ -6,15 +6,14 @@ export class PlanetScaleAdapter implements DatabaseAdapter {
 
   private async getConnection(): Promise<mysql.Connection> {
     if (!this.connection) {
+      // mysql2 expects a ConnectionOptions object; use 'user' instead of 'username'
       this.connection = await mysql.createConnection({
         host: process.env.DATABASE_HOST,
-        username: process.env.DATABASE_USERNAME,
+        user: process.env.DATABASE_USERNAME,
         password: process.env.DATABASE_PASSWORD,
         database: process.env.DATABASE_NAME,
-        ssl: {
-          rejectUnauthorized: true
-        }
-      });
+        ssl: process.env.DATABASE_REJECT_UNAUTHORIZED === 'false' ? undefined : { rejectUnauthorized: true },
+      } as any);
     }
     return this.connection;
   }

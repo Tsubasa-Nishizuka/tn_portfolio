@@ -102,7 +102,9 @@ export class PostgreSQLAPIAdapter implements DatabaseAdapter {
       name: response.name,
       email: response.email,
       password: response.password_hash,
-      role: response.role
+      role: response.role,
+      created_at: response.created_at,
+      updated_at: response.updated_at,
     };
   }
 
@@ -129,7 +131,9 @@ export class PostgreSQLAPIAdapter implements DatabaseAdapter {
       name: response.name,
       email: response.email,
       password: response.password_hash,
-      role: response.role
+      role: response.role,
+      created_at: response.created_at,
+      updated_at: response.updated_at,
     };
   }
 

@@ -1,0 +1,13 @@
+{
+  "files": [
+    { "path": "docs/meta/SITE_META.md", "enabled": true },
+    { "path": "docs/meta/postgresql.md", "enabled": true },
+    { "path": "docs/features.md", "enabled": true },
+    { "path": "docs/technology-stack.md", "enabled": true },
+    { "path": "docs/authentication.md", "enabled": true },
+    { "path": "docs/ai-services.md", "enabled": true },
+    { "path": "docs/archive/DATABASE_OPTIONS.md", "enabled": true },
+    { "path": "docs/archive/MIGRATION_GUIDE.md", "enabled": true },
+    { "path": "docs/meta/postgresql.md", "enabled": true }
+  ]
+}

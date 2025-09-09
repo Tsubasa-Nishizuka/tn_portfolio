@@ -1,4 +1,4 @@
-import { DatabaseAdapter, User } from './database-adapter';
+import { DatabaseAdapter, User, CreateUserData } from './database-adapter';
 import Database from 'better-sqlite3';
 import path from 'path';
 
@@ -6,100 +6,61 @@ export class SQLiteAdapter implements DatabaseAdapter {
   private db: Database.Database;
 
   constructor() {
-    const dbPath = process.env.NODE_ENV === 'production' 
-      ? path.join(process.cwd(), 'data', 'portfolio.db')
-      : path.join(process.cwd(), 'data', 'portfolio.db');
-    
+    const dbPath = path.join(process.cwd(), 'data', 'portfolio.db');
     this.db = new Database(dbPath);
-    this.initTable();
-  }
-
-  private initTable() {
-    const createTable = this.db.prepare(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        email TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        role TEXT NOT NULL CHECK (role IN ('user', 'admin', 'master'))
-      )
-    `);
-    createTable.run();
+    this.db.pragma('journal_mode = WAL');
   }
 
   async findUserByEmail(email: string): Promise<User | null> {
-    try {
-      const stmt = this.db.prepare('SELECT * FROM users WHERE email = ?');
-      const user = stmt.get(email) as any;
-      return user || null;
-    } catch (error) {
-      console.error('SQLite findUserByEmail error:', error);
-      return null;
-    }
+    const row = this.db.prepare('SELECT * FROM users WHERE email = ?').get(email) as any;
+    return row ? this.mapUser(row) : null;
   }
 
   async findUserById(id: number): Promise<User | null> {
-    try {
-      const stmt = this.db.prepare('SELECT * FROM users WHERE id = ?');
-      const user = stmt.get(id) as any;
-      return user || null;
-    } catch (error) {
-      console.error('SQLite findUserById error:', error);
-      return null;
-    }
+    const row = this.db.prepare('SELECT * FROM users WHERE id = ?').get(id) as any;
+    return row ? this.mapUser(row) : null;
   }
 
-  async createUser(user: Omit<User, 'id'>): Promise<User | null> {
-    try {
-      const stmt = this.db.prepare(
-        'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)'
-      );
-      const result = stmt.run(user.name, user.email, user.password, user.role);
-      
-      const newUser: User = {
-        id: result.lastInsertRowid as number,
-        ...user
-      };
-      
-      return newUser;
-    } catch (error) {
-      console.error('SQLite createUser error:', error);
-      return null;
-    }
+  async createUser(userData: CreateUserData): Promise<User | null> {
+    const stmt = this.db.prepare(
+      'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)'
+    );
+    const info = stmt.run(userData.name, userData.email, userData.password, userData.role);
+    const created = this.db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid as number) as any;
+    return created ? this.mapUser(created) : null;
   }
 
   async updateUser(id: number, updates: Partial<Omit<User, 'id'>>): Promise<User | null> {
-    try {
-      const fields = Object.keys(updates);
-      const values = Object.values(updates);
-      
-      if (fields.length === 0) {
-        return this.findUserById(id);
-      }
-      
-      const setClause = fields.map(field => `${field} = ?`).join(', ');
-      const stmt = this.db.prepare(`UPDATE users SET ${setClause} WHERE id = ?`);
-      
-      stmt.run(...values, id);
-      return this.findUserById(id);
-    } catch (error) {
-      console.error('SQLite updateUser error:', error);
-      return null;
+    const fields: string[] = [];
+    const values: any[] = [];
+    for (const [k, v] of Object.entries(updates)) {
+      fields.push(`${k} = ?`);
+      values.push(v);
     }
+    if (fields.length === 0) return await this.findUserById(id);
+    const sql = `UPDATE users SET ${fields.join(', ')} WHERE id = ?`;
+    this.db.prepare(sql).run(...values, id);
+    return await this.findUserById(id);
   }
 
   async deleteUser(id: number): Promise<boolean> {
-    try {
-      const stmt = this.db.prepare('DELETE FROM users WHERE id = ?');
-      const result = stmt.run(id);
-      return result.changes > 0;
-    } catch (error) {
-      console.error('SQLite deleteUser error:', error);
-      return false;
-    }
+    const info = this.db.prepare('DELETE FROM users WHERE id = ?').run(id);
+    return info.changes > 0;
   }
 
   async close(): Promise<void> {
     this.db.close();
+  }
+
+  private mapUser(row: any): User {
+    return {
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      password: row.password,
+      role: row.role,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    };
   }
 }

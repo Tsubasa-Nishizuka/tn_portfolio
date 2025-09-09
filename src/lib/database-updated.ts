@@ -1,6 +1,4 @@
-import Database from 'better-sqlite3';
 import bcrypt from 'bcryptjs';
-import path from 'path';
 import { SQLiteAdapter } from './adapters/sqlite-adapter';
 import { PostgreSQLAPIAdapter } from './adapters/postgresql-api-adapter';
 import { DatabaseAdapter } from './adapters/database-adapter';

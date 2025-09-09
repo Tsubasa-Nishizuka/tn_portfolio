@@ -1,11 +1,13 @@
+import labels from "src/labels";
+
 export default function Header() {
   return (
     <header className="text-center mb-16">
       <h1 className="text-5xl font-bold text-gray-800 dark:text-white mb-4">
-        Portfolio Authentication Demo
+        {labels.HEADER_TITLE}
       </h1>
-      <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-6">
-        3種類のユーザー権限を持つ認証システムのデモンストレーション
+      <p className="text-xl text-gray-600 dark:text-gray-300 max-w-5xl mx-auto mb-6">
+        {labels.HEADER_SUBTITLE}
       </p>
 
       {/* Technology Stack Badge */}
@@ -13,15 +15,15 @@ export default function Header() {
         <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-300">
           <span className="flex items-center">
             <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
-            Next.js 15
+            {labels.HEADER_STATUS_NEXTJS}
           </span>
           <span className="flex items-center">
             <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-            PostgreSQL
+            {labels.HEADER_STATUS_POSTGRESQL}
           </span>
           <span className="flex items-center">
             <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
-            Contabo Server
+            {labels.HEADER_DESCRIPTION}
           </span>
         </div>
       </div>
