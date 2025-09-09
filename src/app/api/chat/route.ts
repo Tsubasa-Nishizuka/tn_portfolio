@@ -28,7 +28,7 @@ async function loadDocsIndex(): Promise<DocsIndex> {
 }
 
 async function readDocContent(docRelPath: string): Promise<string> {
-	const fullPath = path.join(process.cwd(), docRelPath);
+	const fullPath = path.join(process.cwd(), "public", docRelPath);
 	return fs.readFile(fullPath, "utf-8");
 }
 
