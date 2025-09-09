@@ -259,17 +259,15 @@ export default function AIFeatures() {
         <div className="grid md:grid-cols-3 gap-6">
           {/* 売上向上 */}
           <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-6 border border-green-200 dark:border-green-800 hover:border-green-400 dark:hover:border-green-500 transition-all duration-300 hover:-translate-y-1">
-            <div className="flex items-start mb-6">
-              <div className="w-14 h-14 bg-green-500 rounded-lg flex items-center justify-center mr-4 shadow-md flex-shrink-0">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center mr-4 shadow-md">
                 <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M16 6L18.29 8.29L13.41 13.17L9.41 9.17L2 16.59L3.41 18L9.41 12L13.41 16L19.71 9.71L22 12V6H16Z"/>
                 </svg>
               </div>
-              <div className="flex-1">
-                <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{labels.AI_IMPROVEMENT_SALES_TITLE}</h4>
-                <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">{labels.AI_IMPROVEMENT_SALES_DESC}</p>
-              </div>
+              <h4 className="text-lg font-bold text-gray-900 dark:text-white">{labels.AI_IMPROVEMENT_SALES_TITLE}</h4>
             </div>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">{labels.AI_IMPROVEMENT_SALES_DESC}</p>
             <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
               <div className="flex items-center">
                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-3 flex-shrink-0"></span>
@@ -288,17 +286,15 @@ export default function AIFeatures() {
 
           {/* コスト削減 */}
           <div className="bg-pink-50 dark:bg-pink-900/20 rounded-xl p-6 border border-pink-200 dark:border-pink-800 hover:border-pink-400 dark:hover:border-pink-500 transition-all duration-300 hover:-translate-y-1">
-            <div className="flex items-start mb-6">
-              <div className="w-14 h-14 bg-pink-500 rounded-lg flex items-center justify-center mr-4 shadow-md flex-shrink-0">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-pink-500 rounded-lg flex items-center justify-center mr-4 shadow-md">
                 <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M7 15H9C9 16.08 10.37 17 12 17S15 16.08 15 15C15 13.9 13.96 13.5 11.76 12.97C9.64 12.44 7 11.78 7 9C7 7.21 8.47 5.69 10.5 5.18V3H13.5V5.18C15.53 5.69 17 7.21 17 9H15C15 7.92 13.63 7 12 7S9 7.92 9 9C9 10.1 10.04 10.5 12.24 11.03C14.36 11.56 17 12.22 17 15C17 16.79 15.53 18.31 13.5 18.82V21H10.5V18.82C8.47 18.31 7 16.79 7 15Z"/>
                 </svg>
               </div>
-              <div className="flex-1">
-                <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{labels.AI_IMPROVEMENT_EFFICIENCY_TITLE}</h4>
-                <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">{labels.AI_IMPROVEMENT_EFFICIENCY_DESC}</p>
-              </div>
+              <h4 className="text-lg font-bold text-gray-900 dark:text-white">{labels.AI_IMPROVEMENT_EFFICIENCY_TITLE}</h4>
             </div>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">{labels.AI_IMPROVEMENT_EFFICIENCY_DESC}</p>
             <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
               <div className="flex items-center">
                 <span className="w-1.5 h-1.5 bg-pink-500 rounded-full mr-3 flex-shrink-0"></span>
@@ -325,17 +321,15 @@ export default function AIFeatures() {
 
           {/* 意思決定支援 */}
           <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-800 hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 hover:-translate-y-1">
-            <div className="flex items-start mb-6">
-              <div className="w-14 h-14 bg-purple-500 rounded-lg flex items-center justify-center mr-4 shadow-md flex-shrink-0">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center mr-4 shadow-md">
                 <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2L13.09 8.26L22 9L13.09 9.74L12 16L10.91 9.74L2 9L10.91 8.26L12 2ZM4 14L5 17H7L6 14H4ZM18 14L17 17H19L20 14H18Z"/>
                 </svg>
               </div>
-              <div className="flex-1">
-                <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{labels.AI_IMPROVEMENT_ACCURACY_TITLE}</h4>
-                <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">{labels.AI_IMPROVEMENT_ACCURACY_DESC}</p>
-              </div>
+              <h4 className="text-lg font-bold text-gray-900 dark:text-white">{labels.AI_IMPROVEMENT_ACCURACY_TITLE}</h4>
             </div>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">{labels.AI_IMPROVEMENT_ACCURACY_DESC}</p>
             <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
               <div className="flex items-center">
                 <span className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-3 flex-shrink-0"></span>
