@@ -22,7 +22,7 @@ type DocsIndex = {
 
 
 async function loadDocsIndex(): Promise<DocsIndex> {
-	const indexPath = path.join(process.cwd(), "docs", "index.json");
+	const indexPath = path.join(process.cwd(), "public", "docs", "index.json");
 	const raw = await fs.readFile(indexPath, "utf-8");
 	return JSON.parse(raw) as DocsIndex;
 }
