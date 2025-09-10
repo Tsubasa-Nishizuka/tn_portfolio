@@ -18,6 +18,8 @@ export default function Chatbot() {
   const [transitionsOn, setTransitionsOn] = useState(false);
   // 端末幅でモバイル判定（md未満をモバイルとする）
   const [isMobile, setIsMobile] = useState(false);
+  // 可視ビューポート高さ（keyboard出現時に縮む領域）
+  const [visibleVH, setVisibleVH] = useState<number | null>(null);
 
   // 位置とサイズ
   const [dimensions, setDimensions] = useState({ width: 480, height: 600 });
@@ -39,6 +41,39 @@ export default function Chatbot() {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  // モバイル時は visualViewport を監視して可視領域の高さを取得（keyboard出現にも追従）
+  useEffect(() => {
+    // 初期化
+    const updateVV = () => {
+      if (typeof window !== 'undefined') {
+        const vv = 'visualViewport' in window ? window.visualViewport : undefined;
+        if (vv) {
+          setVisibleVH(Math.round(vv.height));
+        } else {
+          setVisibleVH(Math.round(window.innerHeight));
+        }
+      }
+    };
+    updateVV();
+
+  const vv = (typeof window !== 'undefined' && 'visualViewport' in window) ? window.visualViewport : undefined;
+    if (vv) {
+      vv.addEventListener('resize', updateVV);
+      vv.addEventListener('scroll', updateVV); // 一部端末ではキーボード出現でscrollイベントが飛ぶ
+    }
+    window.addEventListener('orientationchange', updateVV);
+    window.addEventListener('resize', updateVV);
+
+    return () => {
+      if (vv) {
+        vv.removeEventListener('resize', updateVV);
+        vv.removeEventListener('scroll', updateVV);
+      }
+      window.removeEventListener('orientationchange', updateVV);
+      window.removeEventListener('resize', updateVV);
+    };
+  }, []);
+
   // 初期位置: 画面右下のTailwind余白相当位置に表示（初回はトランジション無効にして配置後に有効化）
   useLayoutEffect(() => {
     if (!isOpen) return;
@@ -47,9 +82,9 @@ export default function Chatbot() {
     const { innerWidth: vw, innerHeight: vh } = window;
 
     if (isMobile) {
-      // モバイルは全画面表示
-      setPosition({ left: 0, top: 0 });
-      setDimensions({ width: vw, height: vh });
+  // モバイルは上部50%に固定（visualViewportに追従）
+  setPosition({ left: 0, top: 0 });
+  // 高さは style 側で visibleVH から動的反映するため、ここでは dimensions を更新しない
     } else {
       // デスクトップは右下に配置
       const left = Math.max(12, vw - rightOffset - dimensions.width);
@@ -241,11 +276,12 @@ export default function Chatbot() {
 
       {/* チャットウィンドウ */}
       {isOpen && (
-    <div
+  <div
           className="fixed bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl md:rounded-3xl shadow-2xl z-50 flex flex-col border border-gray-200/50 dark:border-gray-700/50 overflow-hidden transition-all duration-300 hover:shadow-3xl"
           style={{
-            width: isMobile ? '100vw' : `${dimensions.width}px`,
-            height: isMobile ? '100vh' : `${dimensions.height}px`,
+      width: isMobile ? '100vw' : `${dimensions.width}px`,
+      // モバイルは可視ビューポートの50%を使用（keyboard出現時も追従）
+      height: isMobile ? `${Math.round((visibleVH ?? window.innerHeight) * 0.5)}px` : `${dimensions.height}px`,
             left: isMobile ? 0 : `${position.left}px`,
             top: isMobile ? 0 : `${position.top}px`,
             transition: (isResizing || !transitionsOn) ? 'none' : 'all 0.3s ease',
@@ -322,7 +358,7 @@ export default function Chatbot() {
                   onKeyDown={handleKeyDown}
                   placeholder="質問をしてください..."
                   rows={1}
-                  className="flex-1 p-3 border border-gray-300/50 dark:border-gray-600/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:bg-gray-700/50 dark:text-white resize-none text-sm backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 transition-all duration-200 hover:bg-white/70 dark:hover:bg-gray-700/70"
+                  className="flex-1 p-3 border border-gray-300/50 dark:border-gray-600/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:bg-gray-700/50 dark:text-white resize-none text-base md:text-sm backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 transition-all duration-200 hover:bg-white/70 dark:hover:bg-gray-700/70"
                   disabled={isTyping}
                 />
                 <button onClick={handleSendMessage} disabled={isTyping} className="bg-gradient-to-br from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-3 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95">
