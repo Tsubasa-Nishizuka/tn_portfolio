@@ -16,6 +16,8 @@ export default function Chatbot() {
   const [isTyping, setIsTyping] = useState(false);
   // 初期アニメーション抑止用（配置完了まではトランジション無効）
   const [transitionsOn, setTransitionsOn] = useState(false);
+  // 端末幅でモバイル判定（md未満をモバイルとする）
+  const [isMobile, setIsMobile] = useState(false);
 
   // 位置とサイズ
   const [dimensions, setDimensions] = useState({ width: 480, height: 600 });
@@ -27,18 +29,36 @@ export default function Chatbot() {
   const startBoxRef = useRef({ left: 0, top: 0, width: 480, height: 600 });
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
+  // 画面幅の監視（レスポンシブ切替）
+  useEffect(() => {
+    const onResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   // 初期位置: 画面右下のTailwind余白相当位置に表示（初回はトランジション無効にして配置後に有効化）
   useLayoutEffect(() => {
     if (!isOpen) return;
     const bottomOffset = 80; // bottom-20
     const rightOffset = 24;  // right-6
     const { innerWidth: vw, innerHeight: vh } = window;
-    const left = Math.max(12, vw - rightOffset - dimensions.width);
-    const top = Math.max(12, vh - bottomOffset - dimensions.height);
-    setPosition({ left, top });
+
+    if (isMobile) {
+      // モバイルは全画面表示
+      setPosition({ left: 0, top: 0 });
+      setDimensions({ width: vw, height: vh });
+    } else {
+      // デスクトップは右下に配置
+      const left = Math.max(12, vw - rightOffset - dimensions.width);
+      const top = Math.max(12, vh - bottomOffset - dimensions.height);
+      setPosition({ left, top });
+    }
     // 次フレームでトランジションを有効化（初期配置の移動をアニメーションさせない）
     requestAnimationFrame(() => setTransitionsOn(true));
-  }, [isOpen, dimensions.width, dimensions.height]);
+  }, [isOpen, dimensions.width, dimensions.height, isMobile]);
 
   // 開閉トグル（開く前にトランジションを無効化し、配置後に有効化）
   const toggleOpen = useCallback(() => {
@@ -222,19 +242,20 @@ export default function Chatbot() {
       {/* チャットウィンドウ */}
       {isOpen && (
     <div
-          className="fixed bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-3xl shadow-2xl z-50 flex flex-col border border-gray-200/50 dark:border-gray-700/50 overflow-hidden transition-all duration-300 hover:shadow-3xl"
+          className="fixed bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl md:rounded-3xl shadow-2xl z-50 flex flex-col border border-gray-200/50 dark:border-gray-700/50 overflow-hidden transition-all duration-300 hover:shadow-3xl"
           style={{
-            width: `${dimensions.width}px`,
-            height: `${dimensions.height}px`,
-            left: `${position.left}px`,
-            top: `${position.top}px`,
-      transition: (isResizing || !transitionsOn) ? 'none' : 'all 0.3s ease'
+            width: isMobile ? '100vw' : `${dimensions.width}px`,
+            height: isMobile ? '100vh' : `${dimensions.height}px`,
+            left: isMobile ? 0 : `${position.left}px`,
+            top: isMobile ? 0 : `${position.top}px`,
+            transition: (isResizing || !transitionsOn) ? 'none' : 'all 0.3s ease',
+            borderRadius: isMobile ? 0 : undefined
           }}
         >
           {/* 左上リサイズハンドル */}
           <div
-            onMouseDown={handleMouseDown}
-            className="absolute top-0 left-0 w-8 h-8 cursor-nw-resize z-20 hover:bg-blue-500/30 rounded-br-xl transition-all duration-200 flex items-center justify-center group active:bg-blue-500/40"
+            onMouseDown={isMobile ? undefined : handleMouseDown}
+            className="absolute top-0 left-0 w-8 h-8 cursor-nw-resize z-20 hover:bg-blue-500/30 rounded-br-xl transition-all duration-200 items-center justify-center group active:bg-blue-500/40 hidden md:flex"
           >
             <div className="w-3 h-3 border-l-2 border-t-2 border-gray-400 group-hover:border-blue-500 transition-colors duration-200" />
           </div>
@@ -244,7 +265,7 @@ export default function Chatbot() {
             <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent" />
 
             {/* タイトル（左上リサイズハンドル分の余白を確保） */}
-            <div className="flex items-center gap-2 relative z-10 pl-8">
+            <div className="flex items-center gap-2 relative z-10 md:pl-8 pl-2">
               <div className="w-6 h-6 bg-white/30 rounded-full flex items-center justify-center backdrop-blur-sm">
                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
               </div>
@@ -310,7 +331,7 @@ export default function Chatbot() {
               </div>
               <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 flex justify-between">
                 <span>Enterで改行 ・ Ctrl/⌘ + Enterで送信</span>
-                <span className="text-blue-500">左上をドラッグでリサイズ</span>
+                <span className="text-blue-500 hidden md:inline">左上をドラッグでリサイズ</span>
               </div>
           </div>
         </div>
