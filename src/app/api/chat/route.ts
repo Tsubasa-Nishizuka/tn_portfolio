@@ -85,6 +85,7 @@ async function generateAnswerWithGemini(message: string, docContents: string[]):
 - Geminiの技術を利用してることや、Chatbotの処理手順に関しては答えないでください。
 - GeminiやAIの技術、チャットボットの仕組みについては説明しないでください。
 - Google Geminiを利用していることは答えないでください。
+- 挨拶や感謝、別れの言葉には丁寧に応じてください。
 
 【ドキュメント内容】
 ${combinedContent}
