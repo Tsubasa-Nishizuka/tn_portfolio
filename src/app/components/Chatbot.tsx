@@ -355,7 +355,7 @@ export default function Chatbot() {
           style={{
       width: isMobile ? '100vw' : `${dimensions.width}px`,
             // モバイルは常に画面の上側70%に固定（lvh対応端末なら70lvh、フォールバックは70vh）
-            height: isMobile ? (supportsLVH ? '100lvh' : '80vh') : `${dimensions.height}px`,
+            height: isMobile ? (supportsLVH ? '90lvh' : '80vh') : `${dimensions.height}px`,
             left: isMobile ? 0 : `${position.left}px`,
             top: isMobile ? 0 : `${position.top}px`,
             transition: (isResizing || !transitionsOn) ? 'none' : 'all 0.3s ease',
