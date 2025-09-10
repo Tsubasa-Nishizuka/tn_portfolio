@@ -18,8 +18,7 @@ export default function Chatbot() {
   const [transitionsOn, setTransitionsOn] = useState(false);
   // 端末幅でモバイル判定（md未満をモバイルとする）
   const [isMobile, setIsMobile] = useState(false);
-  // CSSのlvh対応可否
-  const [supportsLVH, setSupportsLVH] = useState(false);
+  // CSSのlvh対応可否（未使用に変更）
   // 入力欄を持ち上げるための下側オクルージョン量（keyboard表示時）
   const [inputBottomInset, setInputBottomInset] = useState(0);
   const targetInsetRef = useRef(0);
@@ -56,11 +55,43 @@ export default function Chatbot() {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // CSS.supportsでlvhサポートを確認
+  // lvh は使用しない（--vh を採用）
+
+  // ①: モバイルブラウザのURLバーによる高さ変動対策（--vh を innerHeight から設定）
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'CSS' in window && typeof CSS.supports === 'function') {
-      setSupportsLVH(CSS.supports('height', '1lvh'));
+    const setVh = () => {
+      if (typeof window === 'undefined') return;
+      // visualViewport があればそれを優先（キーボードやURLバーの変化を正確に反映）
+      const height = ('visualViewport' in window && window.visualViewport) ? window.visualViewport.height : window.innerHeight;
+      const vhUnit = height * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vhUnit}px`);
+    };
+    setVh();
+
+    const onChange = () => setVh();
+    window.addEventListener('resize', onChange, { passive: true });
+    window.addEventListener('orientationchange', onChange);
+
+    const vv = ('visualViewport' in window) ? window.visualViewport : null;
+    if (vv) {
+      vv.addEventListener('resize', onChange);
+      vv.addEventListener('scroll', onChange);
     }
+
+    // キーボードの focusin / focusout でも高さを更新
+    window.addEventListener('focusin', onChange);
+    window.addEventListener('focusout', onChange);
+
+    return () => {
+      window.removeEventListener('resize', onChange);
+      window.removeEventListener('orientationchange', onChange);
+      if (vv) {
+        vv.removeEventListener('resize', onChange);
+        vv.removeEventListener('scroll', onChange);
+      }
+      window.removeEventListener('focusin', onChange);
+      window.removeEventListener('focusout', onChange);
+    };
   }, []);
 
   // モバイルでチャットを開いている間は背景スクロールをロック
@@ -151,9 +182,9 @@ export default function Chatbot() {
     const { innerWidth: vw, innerHeight: vh } = window;
 
     if (isMobile) {
-      // モバイルは上部50%に固定（lvhを使用してキーボード出現時も高さを変えない）
-  setPosition({ left: 0, top: 0 });
-      // 高さは style 側で 50lvh/50vh を使用するため、ここでは dimensions を更新しない
+      // モバイルは全画面（--vh に基づく高さ）に固定。キーボード出現時も本体は動かない。
+      setPosition({ left: 0, top: 0 });
+      // 高さはクラス h-[calc(var(--vh)_*100)] で制御するため、ここでは dimensions を更新しない
     } else {
       // デスクトップは右下に配置
       const left = Math.max(12, vw - rightOffset - dimensions.width);
@@ -349,13 +380,13 @@ export default function Chatbot() {
       </div>
 
       {/* チャットウィンドウ */}
-      {isOpen && (
+    {isOpen && (
   <div
-          className="fixed bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl md:rounded-3xl shadow-2xl z-50 flex flex-col border border-gray-200/50 dark:border-gray-700/50 overflow-hidden transition-all duration-300 hover:shadow-3xl"
+          className={`fixed bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl md:rounded-3xl shadow-2xl z-50 flex flex-col border border-gray-200/50 dark:border-gray-700/50 overflow-hidden transition-all duration-300 hover:shadow-3xl ${isMobile ? 'h-[calc(var(--vh)_*100)]' : ''}`}
           style={{
       width: isMobile ? '100vw' : `${dimensions.width}px`,
-            // モバイルは常に画面の上側70%に固定（lvh対応端末なら70lvh、フォールバックは70vh）
-            height: isMobile ? (supportsLVH ? '90lvh' : '80vh') : `${dimensions.height}px`,
+            // モバイルは h-[calc(var(--vh)_*100)]（--vh=innerHeight*1%）で動的高さ、デスクトップは固定px
+      height: isMobile ? undefined : `${dimensions.height}px`,
             left: isMobile ? 0 : `${position.left}px`,
             top: isMobile ? 0 : `${position.top}px`,
             transition: (isResizing || !transitionsOn) ? 'none' : 'all 0.3s ease',
