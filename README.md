@@ -47,7 +47,7 @@ Next.js 15 + TypeScript + PostgreSQL で構築した、本格的な認証・AI�
 - **アダプターパターン**: DB抽象化層によるスケーラブル設計
 
 ### データベース（柔軟な選択肢）
-- **本番環境**: PostgreSQL (Contabo VPS / AWS RDS / Azure Database)
+- **本番環境**: PostgreSQL (Contabo VPS)
 - **開発環境**: PostgreSQL（ローカル開発でも PostgreSQL を使用します）
 - **代替オプション**: SQLite（軽量な検証・開発用）、MySQL、MariaDB（アダプター切り替えで対応可能）。また、AWS RDS や Azure Database などのマネージドホスティングも利用可能です。
 
