@@ -8,18 +8,37 @@ interface APIResponse<T> {
 }
 
 export class PostgreSQLAPIAdapter implements DatabaseAdapter {
-  private baseURL = 'http://api.valiondrive.com';
-  private auth = 'Basic YWRtaW46YWRtaW4xMjM='; // admin:admin123
+  private baseURL: string;
+  private auth: string;
+
+  constructor() {
+    // 環境変数で外部 API のエンドポイントと認証ヘッダを指定します（.env.local / .env.prod）。
+    // ハードコーディング値は削除しました。未設定時は空文字となり、警告を出します。
+    this.baseURL = process.env.POSTGRES_API_BASE_URL || '';
+    this.auth = process.env.POSTGRES_API_AUTH || '';
+
+    if (!this.baseURL) {
+      console.warn('POSTGRES_API_BASE_URL is not set. PostgreSQLAPIAdapter will not perform requests until configured.');
+    }
+  }
   
   private async makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T | null> {
     try {
+      if (!this.baseURL) {
+        console.error('POSTGRES_API_BASE_URL is not configured. Aborting API request.');
+        return null;
+      }
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...options.headers as Record<string, string> || {},
+      };
+
+      if (this.auth) headers['Authorization'] = this.auth;
+
       const response = await fetch(`${this.baseURL}${endpoint}`, {
         ...options,
-        headers: {
-          'Authorization': this.auth,
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
+        headers,
       });
       
       if (!response.ok) {

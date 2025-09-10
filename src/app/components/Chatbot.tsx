@@ -18,12 +18,18 @@ export default function Chatbot() {
   const [transitionsOn, setTransitionsOn] = useState(false);
   // 端末幅でモバイル判定（md未満をモバイルとする）
   const [isMobile, setIsMobile] = useState(false);
+  // OS 判定
+  const [isIOS, setIsIOS] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
   // CSSのlvh対応可否（未使用に変更）
   // 入力欄を持ち上げるための下側オクルージョン量（keyboard表示時）
   const [inputBottomInset, setInputBottomInset] = useState(0);
   const targetInsetRef = useRef(0);
   const rafRef = useRef<number | null>(null);
   const currentInsetRef = useRef(0);
+  // visualViewport の高さをそのまま使ってモバイル時のコンテナ高さを調整（Androidキーボード対策）
+  const [useVvHeight, setUseVvHeight] = useState(false);
+  const [mobileVvHeight, setMobileVvHeight] = useState<number | null>(null);
 
   // 位置とサイズ
   const [dimensions, setDimensions] = useState({ width: 480, height: 600 });
@@ -55,44 +61,64 @@ export default function Chatbot() {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  // OS 判定（iOS / Android）
+  useEffect(() => {
+    if (typeof navigator === 'undefined') return;
+    const ua = navigator.userAgent || '';
+  const navAny = navigator as unknown as { platform?: string; maxTouchPoints?: number };
+  const isiOSUA = /iPad|iPhone|iPod/.test(ua) || (navAny.platform === 'MacIntel' && (navAny.maxTouchPoints ?? 0) > 1);
+    const isAndroidUA = /Android/.test(ua);
+    setIsIOS(!!isiOSUA);
+    setIsAndroid(!!isAndroidUA);
+  }, []);
+
+  // ヘッダー高さの計測は不要（シンプル実装）
+
   // lvh は使用しない（--vh を採用）
 
-  // ①: モバイルブラウザのURLバーによる高さ変動対策（--vh を innerHeight から設定）
+  // ①: モバイルブラウザのURLバー対策（--vh を innerHeight から設定するシンプル版）
   useEffect(() => {
     const setVh = () => {
       if (typeof window === 'undefined') return;
-      // visualViewport があればそれを優先（キーボードやURLバーの変化を正確に反映）
-      const height = ('visualViewport' in window && window.visualViewport) ? window.visualViewport.height : window.innerHeight;
-      const vhUnit = height * 0.01;
+      const vhUnit = window.innerHeight * 0.01;
       document.documentElement.style.setProperty('--vh', `${vhUnit}px`);
     };
     setVh();
-
-    const onChange = () => setVh();
-    window.addEventListener('resize', onChange, { passive: true });
-    window.addEventListener('orientationchange', onChange);
-
-    const vv = ('visualViewport' in window) ? window.visualViewport : null;
-    if (vv) {
-      vv.addEventListener('resize', onChange);
-      vv.addEventListener('scroll', onChange);
-    }
-
-    // キーボードの focusin / focusout でも高さを更新
-    window.addEventListener('focusin', onChange);
-    window.addEventListener('focusout', onChange);
-
+    window.addEventListener('resize', setVh);
+    window.addEventListener('orientationchange', setVh);
     return () => {
-      window.removeEventListener('resize', onChange);
-      window.removeEventListener('orientationchange', onChange);
-      if (vv) {
-        vv.removeEventListener('resize', onChange);
-        vv.removeEventListener('scroll', onChange);
-      }
-      window.removeEventListener('focusin', onChange);
-      window.removeEventListener('focusout', onChange);
+      window.removeEventListener('resize', setVh);
+      window.removeEventListener('orientationchange', setVh);
     };
   }, []);
+
+  // モバイルかつチャット表示中（Androidのみ）は、visualViewport.height を高さとして採用
+  useEffect(() => {
+    if (!isMobile || !isOpen || !isAndroid) {
+      setUseVvHeight(false);
+      setMobileVvHeight(null);
+      return;
+    }
+    if (typeof window === 'undefined' || !('visualViewport' in window)) {
+      setUseVvHeight(false);
+      setMobileVvHeight(null);
+      return;
+    }
+    const vv = window.visualViewport!;
+    const update = () => {
+      setUseVvHeight(true);
+      setMobileVvHeight(Math.round(vv.height));
+    };
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    window.addEventListener('orientationchange', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+      window.removeEventListener('orientationchange', update);
+    };
+  }, [isMobile, isOpen, isAndroid]);
 
   // モバイルでチャットを開いている間は背景スクロールをロック
   useEffect(() => {
@@ -105,10 +131,15 @@ export default function Chatbot() {
     }
   }, [isMobile, isOpen]);
 
-  // キーボード出現時は入力欄のみを持ち上げる（スムーズに補間）
+  // キーボード出現時は入力欄のみを持ち上げる（スムーズに補間）。iOSは検知しない。
   useEffect(() => {
     const computeTargetInset = () => {
-      if (!isMobile || !isOpen) {
+      if (!isMobile || !isOpen || isIOS) {
+        targetInsetRef.current = 0;
+        return;
+      }
+      // visualViewport.height を高さに採用している場合は、持ち上げは不要
+      if (useVvHeight) {
         targetInsetRef.current = 0;
         return;
       }
@@ -167,7 +198,7 @@ export default function Chatbot() {
         }
       };
     }
-  }, [isMobile, isOpen]);
+  }, [isMobile, isOpen, useVvHeight, isIOS]);
 
   // state と ref を同期（他の更新経路でもズレないように）
   useEffect(() => {
@@ -176,7 +207,7 @@ export default function Chatbot() {
 
   // 初期位置: 画面右下のTailwind余白相当位置に表示（初回はトランジション無効にして配置後に有効化）
   useLayoutEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) return; // 閉じている間は何もしない（トランジション再有効化もしない）
     const bottomOffset = 80; // bottom-20
     const rightOffset = 24;  // right-6
     const { innerWidth: vw, innerHeight: vh } = window;
@@ -191,17 +222,16 @@ export default function Chatbot() {
       const top = Math.max(12, vh - bottomOffset - dimensions.height);
       setPosition({ left, top });
     }
-    // 次フレームでトランジションを有効化（初期配置の移動をアニメーションさせない）
-    requestAnimationFrame(() => setTransitionsOn(true));
+  // 次フレームでトランジションを有効化（初期配置の移動をアニメーションさせない）
+  requestAnimationFrame(() => setTransitionsOn(true));
   }, [isOpen, dimensions.width, dimensions.height, isMobile]);
 
   // 開閉トグル（開く前にトランジションを無効化し、配置後に有効化）
   const toggleOpen = useCallback(() => {
-    if (!isOpen) {
-      setTransitionsOn(false);
-    }
+    // 開閉どちらのときも一旦トランジションを無効化してからトグル
+    setTransitionsOn(false);
     setIsOpen(prev => !prev);
-  }, [isOpen]);
+  }, []);
 
   // 左上リサイズ開始
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -380,19 +410,27 @@ export default function Chatbot() {
       </div>
 
       {/* チャットウィンドウ */}
-    {isOpen && (
+  {isOpen && (
   <div
-          className={`fixed bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl md:rounded-3xl shadow-2xl z-50 flex flex-col border border-gray-200/50 dark:border-gray-700/50 overflow-hidden transition-all duration-300 hover:shadow-3xl ${isMobile ? 'h-[calc(var(--vh)_*100)]' : ''}`}
-          style={{
-      width: isMobile ? '100vw' : `${dimensions.width}px`,
-            // モバイルは h-[calc(var(--vh)_*100)]（--vh=innerHeight*1%）で動的高さ、デスクトップは固定px
-      height: isMobile ? undefined : `${dimensions.height}px`,
-            left: isMobile ? 0 : `${position.left}px`,
-            top: isMobile ? 0 : `${position.top}px`,
-            transition: (isResizing || !transitionsOn) ? 'none' : 'all 0.3s ease',
-            borderRadius: isMobile ? 0 : undefined
-          }}
-        >
+            className={`fixed bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl md:rounded-3xl shadow-2xl z-50 flex flex-col border border-gray-200/50 dark:border-gray-700/50 overflow-hidden transition-all duration-300 hover:shadow-3xl ${isMobile ? 'h-[calc(var(--vh)_*100)]' : ''}`}
+            style={{
+    width: isMobile ? '100vw' : `${dimensions.width}px`,
+    // モバイルは visualViewport.height（利用可）→ fallback で --vh * 100
+    height: isMobile ? (useVvHeight && mobileVvHeight != null ? `${mobileVvHeight}px` : undefined) : `${dimensions.height}px`,
+      left: isMobile ? 0 : `${position.left}px`,
+              // モバイルは常に上固定（iOSも含む）。iOSの下固定は無効化。
+              top: isMobile ? 0 : `${position.top}px`,
+              bottom: undefined,
+              // Android の visualViewport 駆動によるサイズ変化時は 0.2s のアニメーション、
+              // それ以外（リサイズ中やトランジション無効時）はアニメ無効。
+              transition: (isResizing || !transitionsOn)
+                ? 'none'
+                : (isMobile && useVvHeight && isAndroid)
+                  ? 'height 0.2s ease, top 0.2s ease, bottom 0.2s ease'
+                  : 'all 0.3s ease',
+              borderRadius: isMobile ? 0 : undefined
+            }}
+          >
           {/* 左上リサイズハンドル */}
           <div
             onMouseDown={isMobile ? undefined : handleMouseDown}
@@ -426,15 +464,15 @@ export default function Chatbot() {
           <div
             ref={messagesContainerRef}
             className="flex-1 p-4 overflow-y-auto bg-gradient-to-b from-gray-50/50 to-white/50 dark:from-gray-900/50 dark:to-gray-800/50 backdrop-blur-sm"
-            style={{ paddingBottom: isMobile ? inputBottomInset + 16 : undefined, overscrollBehavior: 'contain', transition: 'padding-bottom 0.15s ease-out' }}
+            style={{ paddingBottom: isMobile && !useVvHeight ? inputBottomInset + 16 : undefined, overscrollBehavior: 'contain', transition: 'padding-bottom 0.15s ease-out' }}
           >
             {messages.map((message) => (
-              <div key={message.id} className={`mb-4 ${message.sender === "user" ? "text-right" : "text-left"}`}>
-                <div className={`inline-block p-3 rounded-2xl max-w-xs shadow-lg transition-all duration-200 hover:shadow-xl ${message.sender === "user" ? "bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-br-md border border-blue-500/30" : "bg-white/90 dark:bg-gray-800/90 text-gray-800 dark:text-white border border-gray-200/50 dark:border-gray-700/50 rounded-bl-md backdrop-blur-sm"}`}>
+              <div key={message.id} className={`mb-4 flex flex-col ${message.sender === "user" ? "items-end" : "items-start"}`}>
+                <div className={`inline-block p-3 rounded-2xl max-w-xs shadow-lg transition-all duration-200 hover:shadow-xl text-left ${message.sender === "user" ? "bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-br-md border border-blue-500/30" : "bg-white/90 dark:bg-gray-800/90 text-gray-800 dark:text-white border border-gray-200/50 dark:border-gray-700/50 rounded-bl-md backdrop-blur-sm"}`}>
                   {message.isHtml ? (
-                    <div className="text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: message.text }} />
+                    <div className="text-sm leading-relaxed text-left" dangerouslySetInnerHTML={{ __html: message.text }} />
                   ) : (
-                    <p className="text-sm leading-relaxed whitespace-pre-line">{message.text}</p>
+                    <p className="text-sm leading-relaxed whitespace-pre-line text-left">{message.text}</p>
                   )}
                 </div>
                 <div className={`text-xs text-gray-500 dark:text-gray-400 mt-1 ${message.sender === "user" ? "text-right" : "text-left"}`}>
@@ -460,7 +498,7 @@ export default function Chatbot() {
           {/* 入力 */}
           <div
             className="p-4 border-t border-gray-200/50 dark:border-gray-700/50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm"
-            style={{ transform: isMobile && inputBottomInset > 0 ? `translateY(-${inputBottomInset}px)` : undefined, willChange: isMobile ? 'transform' : undefined, transition: 'transform 0.15s ease-out' }}
+            style={{ transform: isMobile && !useVvHeight && inputBottomInset > 0 ? `translateY(-${inputBottomInset}px)` : undefined, willChange: isMobile && !useVvHeight ? 'transform' : undefined, transition: 'transform 0.15s ease-out' }}
           >
             <div className="flex gap-3 items-end">
                 <textarea
