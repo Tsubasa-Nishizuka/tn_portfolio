@@ -49,7 +49,8 @@ Next.js 15 + TypeScript + PostgreSQL で構築した、本格的な認証・AI�
 ### データベース（柔軟な選択肢）
 - **本番環境**: PostgreSQL (Contabo VPS)
 - **開発環境**: PostgreSQL（ローカル開発でも PostgreSQL を使用します）
-- **代替オプション**: SQLite（軽量な検証・開発用）、MySQL、MariaDB（アダプター切り替えで対応可能）。また、AWS RDS や Azure Database などのマネージドホスティングも利用可能です。
+- **代替オプション**: SQLite（軽量な検証・開発用）、MySQL、MariaDB（アダプター切り替えで対応可能）。また、AWS RDS や Azure Database などのマネージドホスティングも利用可能です。NoSQL（MongoDB、DynamoDB、Firestore）などの選択肢にも対応します。
+ただし、スケーラビリティや検索・集計性能を重視する場合は PostgreSQL を推奨します。主な技術的利点として、組み込みの全文検索（tsvector/tsearch）や GIN/GiST インデックス、`pg_trgm` による高速な類似検索、JSONB とそのインデックスによる半構造化データの効率的検索、さらにパーティショニング・レプリケーション・並列クエリ等の性能最適化機能が充実しており、大規模データでの検索・集計・分析処理に適しているためです。
 
 ### AI・外部サービス
 - **Google Generative AI**: Gemini Pro モデル
