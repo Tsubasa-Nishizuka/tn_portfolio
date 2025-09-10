@@ -22,6 +22,9 @@ export default function Chatbot() {
   const [supportsLVH, setSupportsLVH] = useState(false);
   // 入力欄を持ち上げるための下側オクルージョン量（keyboard表示時）
   const [inputBottomInset, setInputBottomInset] = useState(0);
+  const targetInsetRef = useRef(0);
+  const rafRef = useRef<number | null>(null);
+  const currentInsetRef = useRef(0);
 
   // 位置とサイズ
   const [dimensions, setDimensions] = useState({ width: 480, height: 600 });
@@ -71,37 +74,74 @@ export default function Chatbot() {
     }
   }, [isMobile, isOpen]);
 
-  // キーボード出現時は入力欄のみを持ち上げる
+  // キーボード出現時は入力欄のみを持ち上げる（スムーズに補間）
   useEffect(() => {
-    const updateInset = () => {
+    const computeTargetInset = () => {
       if (!isMobile || !isOpen) {
-        setInputBottomInset(0);
+        targetInsetRef.current = 0;
         return;
       }
       if (typeof window === 'undefined' || !('visualViewport' in window)) {
-        setInputBottomInset(0);
+        targetInsetRef.current = 0;
         return;
       }
       const vv = window.visualViewport!;
       const pageH = window.innerHeight;
       const visibleBottom = vv.height + vv.offsetTop;
-      const bottomInset = Math.max(0, pageH - visibleBottom);
-      setInputBottomInset(bottomInset);
+      // 下から隠れている量（px）
+      const rawInset = Math.max(0, pageH - visibleBottom);
+      // ノイズ抑制しつつ上限/下限を設定
+      const clamped = Math.min(Math.max(rawInset, 0), 480); // 最大480pxまで
+      // 8px未満の変化は無視（小刻みな揺れを抑える）
+      const prev = targetInsetRef.current;
+      targetInsetRef.current = Math.abs(clamped - prev) < 8 ? prev : clamped;
     };
 
-    updateInset();
+    const animate = () => {
+      // 目標値に向けて補間（イージング）
+      const current = currentInsetRef.current;
+      const target = targetInsetRef.current;
+      const next = current + (target - current) * 0.25; // 補間率
+      if (Math.abs(next - current) > 0.5) {
+        setInputBottomInset(next);
+        currentInsetRef.current = next;
+        rafRef.current = requestAnimationFrame(animate);
+      } else if (current !== target) {
+        setInputBottomInset(target);
+        currentInsetRef.current = target;
+      }
+    };
+
+    const kick = () => {
+      computeTargetInset();
+      if (rafRef.current == null) {
+        rafRef.current = requestAnimationFrame(animate);
+      }
+    };
+
+    // 初期計算
+    kick();
     if (typeof window !== 'undefined' && 'visualViewport' in window) {
       const vv = window.visualViewport!;
-      vv.addEventListener('resize', updateInset);
-      vv.addEventListener('scroll', updateInset);
-      window.addEventListener('orientationchange', updateInset);
+      vv.addEventListener('resize', kick);
+      vv.addEventListener('scroll', kick);
+      window.addEventListener('orientationchange', kick);
       return () => {
-        vv.removeEventListener('resize', updateInset);
-        vv.removeEventListener('scroll', updateInset);
-        window.removeEventListener('orientationchange', updateInset);
+        vv.removeEventListener('resize', kick);
+        vv.removeEventListener('scroll', kick);
+        window.removeEventListener('orientationchange', kick);
+        if (rafRef.current != null) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
       };
     }
   }, [isMobile, isOpen]);
+
+  // state と ref を同期（他の更新経路でもズレないように）
+  useEffect(() => {
+    currentInsetRef.current = inputBottomInset;
+  }, [inputBottomInset]);
 
   // 初期位置: 画面右下のTailwind余白相当位置に表示（初回はトランジション無効にして配置後に有効化）
   useLayoutEffect(() => {
@@ -315,7 +355,7 @@ export default function Chatbot() {
           style={{
       width: isMobile ? '100vw' : `${dimensions.width}px`,
             // モバイルは常に画面の上側70%に固定（lvh対応端末なら70lvh、フォールバックは70vh）
-            height: isMobile ? (supportsLVH ? '70lvh' : '70vh') : `${dimensions.height}px`,
+            height: isMobile ? (supportsLVH ? '100lvh' : '80vh') : `${dimensions.height}px`,
             left: isMobile ? 0 : `${position.left}px`,
             top: isMobile ? 0 : `${position.top}px`,
             transition: (isResizing || !transitionsOn) ? 'none' : 'all 0.3s ease',
@@ -355,7 +395,7 @@ export default function Chatbot() {
           <div
             ref={messagesContainerRef}
             className="flex-1 p-4 overflow-y-auto bg-gradient-to-b from-gray-50/50 to-white/50 dark:from-gray-900/50 dark:to-gray-800/50 backdrop-blur-sm"
-            style={{ paddingBottom: isMobile ? inputBottomInset + 16 : undefined }}
+            style={{ paddingBottom: isMobile ? inputBottomInset + 16 : undefined, overscrollBehavior: 'contain', transition: 'padding-bottom 0.15s ease-out' }}
           >
             {messages.map((message) => (
               <div key={message.id} className={`mb-4 ${message.sender === "user" ? "text-right" : "text-left"}`}>
@@ -389,7 +429,7 @@ export default function Chatbot() {
           {/* 入力 */}
           <div
             className="p-4 border-t border-gray-200/50 dark:border-gray-700/50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm"
-            style={{ transform: isMobile && inputBottomInset > 0 ? `translateY(-${inputBottomInset}px)` : undefined }}
+            style={{ transform: isMobile && inputBottomInset > 0 ? `translateY(-${inputBottomInset}px)` : undefined, willChange: isMobile ? 'transform' : undefined, transition: 'transform 0.15s ease-out' }}
           >
             <div className="flex gap-3 items-end">
                 <textarea
